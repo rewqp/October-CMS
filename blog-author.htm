@@ -1,0 +1,98 @@
+title = "Blog Author (Main page Author)"
+url = "/blog/author/:user_id?"
+layout = "blog"
+is_hidden = 0
+
+[blogCategories]
+slug = "{{ :slug }}"
+displayEmpty = 0
+categoryPage = "blog/blog-category"
+
+[searchForm]
+resultPage = "blog/search-result"
+categoryFilter = 0
+
+[CategoryBreadCrumbs]
+categoryPage = "blog/blog-category"
+categorySlug = "{{ :slug }}"
+
+[blogPost]
+slug = "{{ :slug }}"
+categoryPage = "blog/blog-post"
+==
+<?php
+public function onStart(){
+    
+    $id = $this->param('user_id');
+    $this['posts'] =  \RainLab\Blog\Models\Post::where('user_id',$id)->get();
+}
+
+?>
+==
+<div class="brad-crumbs">
+    <!-- Category BreadCrumbs component -->
+    {% component 'CategoryBreadCrumbs' %}
+</div>
+<div class="row">
+    <div class="col-sm-12">
+        <ul class="post-list">
+            {% for post in posts %}
+                <li>
+                    <h3><a href="{{ post.url }}">{{ post.title }}</a></h3>
+                    
+                    <!-- Date, Category and Author post -->
+                    <p class="info">
+                        Published {{ post.published_at|date('M d, Y') }} 
+                        by <a class="user-url" href="/blog/author/{{post.user.id}}">{{ post.user.first_name }} {{ post.user.last_name }} </a>
+                        {% if post.categories.count %} in {% endif %}
+                        {% for category in post.categories %}
+                            <a href="{{ url('/blog/category/'  ~ category.slug)}}">{{ category.name }}</a>{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+
+                    {% if post.featured_images.count %}
+                    <!-- featured images in post list -->
+                    <div class="featured-images text-center">
+                        {% for image in post.featured_images %}
+                            <p>
+                                <img
+                                    data-src="{{ image.filename }}"
+                                    src="{{ image.path }}"
+                                    alt="{{ image.description }}"
+                                    style="max-width: 100%" />
+                            </p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <!-- Button Read More  -->
+                        <div class="post-anons">               
+                            <p class="excerpt">{{ post.summary|raw }}</p>
+                            <a class="post-a" href="{{ url('/blog/post/'  ~ post.slug)}}">
+                                <button class="read-more-btn btn">Read More </button>
+                            </a>
+                        </div>
+                </li>
+            {% else %}
+                <li class="no-data">{{ noPostsMessage }}</li>
+            {% endfor %}
+        </ul>
+                
+        {% if posts.lastPage > 1 %}
+            <ul class="pagination">
+                {% if posts.currentPage > 1 %}
+                    <li><a href="{{ this.page.baseFileName|page({ (pageParam): (posts.currentPage-1) }) }}">&larr; Prev</a></li>
+                {% endif %}
+        
+                {% for page in 1..posts.lastPage %}
+                    <li class="{{ posts.currentPage == page ? 'active' : null }}">
+                        <a href="{{ this.page.baseFileName|page({ (pageParam): page }) }}">{{ page }}</a>
+                    </li>
+                {% endfor %}
+        
+                {% if posts.lastPage > posts.currentPage %}
+                    <li><a href="{{ this.page.baseFileName|page({ (pageParam): (posts.currentPage+1) }) }}">Next &rarr;</a></li>
+                {% endif %}
+            </ul>
+        {% endif %}
+    </div>
+</div>
